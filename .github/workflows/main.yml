@@ -1,10 +1,8 @@
-name: CI
+name: "research"
+
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,21 +17,24 @@ jobs:
             libxtst libxkbcommon libdrm libinput wayland-protocols benchmark \
             xorg-xwayland pipewire cmake \
             libavif libheif aom rav1e libdecor libxdamage
+
       - uses: actions/checkout@v2
         with:
           submodules: recursive
-      - name: Build with gcc
-        run: |
-          export CC=gcc CXX=g++
-          meson build-gcc/ -Dinput_emulation=disabled --werror --auto-features=enabled
-          ninja -C build-gcc/
-      - name: Build with gcc (no vr)
-        run: |
-          export CC=gcc CXX=g++
-          meson build-gcc-novr/ -Dinput_emulation=disabled -Denable_openvr_support=false --werror --auto-features=enabled
-          ninja -C build-gcc-novr/
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: c-cpp
+          queries: security-extended,security-and-quality
+
       - name: Build with clang
         run: |
           export CC=clang CXX=clang++
           meson build-clang/ -Dinput_emulation=disabled --werror --auto-features=enabled
           ninja -C build-clang/
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:c-cpp"
